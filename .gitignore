@@ -1,0 +1,40 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# ML Models
+*.pkl
+*.h5
+*.joblib
+
+# Environment
+.env
+.env.local
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data (add large datasets here)
+backend/data/*.csv
+
+# Node (for later)
+node_modules/
+.next/
+out/
+build/
