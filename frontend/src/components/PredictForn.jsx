@@ -1,80 +1,121 @@
 import { useState } from "react";
 import axios from "axios";
+import CostChart from "./costChart";
 
 function PredictForm() {
   const [form, setForm] = useState({
-    age: "",
-    bmi: "",
-    children: "",
+    age: 25,
+    bmi: 25,
+    children: 0,
     sex: "male",
     smoker: "no",
-    region: "northwest"
+    region: "northwest",
   });
 
   const [result, setResult] = useState(null);
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  const handleChange = async (e) => {
+    const updated = { ...form, [e.target.name]: e.target.value };
+    setForm(updated);
 
-  const handlePredict = async () => {
-    if (!form.age || !form.bmi || !form.children) {
-      alert("Fill all fields");
-      return;
+    try {
+      const res = await axios.post("http://127.0.0.1:8000/predict", updated);
+      setResult(res.data.predicted_cost);
+    } catch (err) {
+      console.log(err);
     }
-
-    const res = await axios.post("http://127.0.0.1:8000/predict", form);
-    setResult(res.data.predicted_cost);
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center">
-      
       <div className="bg-white/20 backdrop-blur-lg p-8 rounded-2xl shadow-xl w-[400px] text-white">
-        
         <h1 className="text-3xl font-bold mb-6 text-center">
           💊 Insurance Predictor
         </h1>
 
-        <input className="w-full p-2 mb-3 rounded text-black"
-          name="age" placeholder="Age" onChange={handleChange}/>
+        {/* AGE */}
+        <label>Age: {form.age}</label>
+        <input
+          type="range"
+          min="18"
+          max="70"
+          name="age"
+          value={form.age}
+          onChange={handleChange}
+          className="w-full mb-3"
+        />
 
-        <input className="w-full p-2 mb-3 rounded text-black"
-          name="bmi" placeholder="BMI" onChange={handleChange}/>
+        {/* BMI */}
+        <label>BMI: {form.bmi}</label>
+        <input
+          type="range"
+          min="15"
+          max="40"
+          step="0.1"
+          name="bmi"
+          value={form.bmi}
+          onChange={handleChange}
+          className="w-full mb-3"
+        />
 
-        <input className="w-full p-2 mb-3 rounded text-black"
-          name="children" placeholder="Children" onChange={handleChange}/>
+        {/* CHILDREN */}
+        <label>Children: {form.children}</label>
+        <input
+          type="range"
+          min="0"
+          max="5"
+          name="children"
+          value={form.children}
+          onChange={handleChange}
+          className="w-full mb-3"
+        />
 
-        <select className="w-full p-2 mb-3 rounded text-black" name="sex" onChange={handleChange}>
+        {/* SEX */}
+        <select
+          name="sex"
+          onChange={handleChange}
+          className="w-full p-2 mb-3 rounded text-black"
+        >
           <option value="male">Male</option>
           <option value="female">Female</option>
         </select>
 
-        <select className="w-full p-2 mb-3 rounded text-black" name="smoker" onChange={handleChange}>
+        {/* SMOKER */}
+        <select
+          name="smoker"
+          onChange={handleChange}
+          className="w-full p-2 mb-3 rounded text-black"
+        >
           <option value="no">Non-Smoker</option>
           <option value="yes">Smoker</option>
         </select>
 
-        <select className="w-full p-2 mb-3 rounded text-black" name="region" onChange={handleChange}>
+        {/* REGION */}
+        <select
+          name="region"
+          onChange={handleChange}
+          className="w-full p-2 mb-3 rounded text-black"
+        >
           <option value="northwest">Northwest</option>
           <option value="northeast">Northeast</option>
           <option value="southwest">Southwest</option>
           <option value="southeast">Southeast</option>
         </select>
 
-        <button
-          onClick={handlePredict}
-          className="w-full bg-blue-600 hover:bg-blue-700 p-3 rounded-lg mt-2"
-        >
-          Predict Cost
-        </button>
-
+        {/* RESULT */}
         {result && (
           <div className="mt-5 bg-white/30 p-4 rounded-lg text-center">
             <h3>Estimated Cost</h3>
             <h2 className="text-2xl font-bold">₹ {result}</h2>
           </div>
         )}
+
+        {/* CHART */}
+        {result && <CostChart cost={result} />}
+
+        <div className="mt-4 text-sm text-center">
+          Change values to see live prediction.
+        </div>
       </div>
     </div>
   );
