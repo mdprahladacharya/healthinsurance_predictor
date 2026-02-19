@@ -3,8 +3,13 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 import joblib
 import pandas as pd
+from .database import SessionLocal, engine
+from .models import Base, Prediction
+
 
 app = FastAPI()
+Base.metadata.create_all(bind=engine)
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -16,8 +21,17 @@ app.add_middleware(
 
 
 # Load trained model + feature order
-model = joblib.load("../ml/model.pkl")
-feature_names = joblib.load("../ml/feature_names.pkl")
+#model = joblib.load("../ml/data/model.pkl")
+#feature_names = joblib.load("../ml/data/feature_names.pkl")
+
+import os
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+model_path = os.path.join(BASE_DIR, "ml", "model.pkl")
+model = joblib.load(model_path)
+feature_path = os.path.join(BASE_DIR, "ml", "feature_names.pkl")
+feature_names = joblib.load(feature_path)
+
 
 
 class InsuranceInput(BaseModel):
@@ -37,7 +51,7 @@ def root():
 @app.post("/predict")
 def predict_cost(data: InsuranceInput):
 
-    # Convert incoming data to dataframe
+    # prepare dataframe
     input_dict = {
         "age": data.age,
         "bmi": data.bmi,
@@ -48,18 +62,31 @@ def predict_cost(data: InsuranceInput):
     }
 
     df = pd.DataFrame([input_dict])
-
-    # One-hot encoding (same as training)
     df = pd.get_dummies(df)
 
-    # Add missing columns
     for col in feature_names:
         if col not in df.columns:
             df[col] = 0
 
-    # Ensure same order
     df = df[feature_names]
 
     prediction = model.predict(df)[0]
+
+    # 💾 SAVE TO DATABASE
+    db = SessionLocal()
+
+    new_entry = Prediction(
+        age=data.age,
+        bmi=data.bmi,
+        children=data.children,
+        sex=data.sex,
+        smoker=data.smoker,
+        region=data.region,
+        cost=prediction
+    )
+
+    db.add(new_entry)
+    db.commit()
+    db.close()
 
     return {"predicted_cost": round(prediction, 2)}
